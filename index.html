@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SaveSmart</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1f8a5b">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#f6f8f5;--card:#fff;--tx:#1b2a22;--mu:#66756c;--ac:#1f8a5b;--ac2:#e3f4ec;--bd:#dde5df;--wn:#d9822b;--rd:#c8433a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101814;--card:#18231d;--tx:#e8f1ec;--mu:#93a69b;--ac:#43c58a;--ac2:#1d3328;--bd:#27372e;--wn:#e8a04f;--rd:#e5675e;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101814;--card:#18231d;--tx:#e8f1ec;--mu:#93a69b;--ac:#43c58a;--ac2:#1d3328;--bd:#27372e;--wn:#e8a04f;--rd:#e5675e;color-scheme:dark}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding-bottom:76px}
+main{max-width:560px;margin:0 auto;padding:16px}
+h1{font-size:22px;margin:4px 0 2px}h2{font-size:17px;margin:0 0 10px}
+.mu{color:var(--mu);font-size:14px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:14px;margin:12px 0}
+.big{font-size:34px;font-weight:700;color:var(--ac)}
+input,select,button{font:inherit;padding:11px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);width:100%;margin:4px 0}
+button{background:var(--ac);color:#fff;border:0;font-weight:600;cursor:pointer}
+button.s{background:var(--ac2);color:var(--ac);width:auto;padding:6px 10px;margin:0;font-size:14px}
+.row{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.row>*{margin:4px 0}.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bar{height:10px;background:var(--ac2);border-radius:6px;overflow:hidden;margin:6px 0}
+.bar i{display:block;height:100%;background:var(--ac);border-radius:6px}
+.li{padding:9px 0;border-bottom:1px solid var(--bd)}.li:last-child{border:0}
+.ins{background:var(--ac2);border-radius:12px;padding:12px;font-size:15px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{background:none;color:var(--mu);border-radius:0;margin:0;border:0;padding:12px 4px;font-size:13px}
+nav button.on{color:var(--ac)}
+.disc{font-size:12px;color:var(--mu);text-align:center;margin-top:18px}
+</style></head><body>
+<main id="app"></main>
+<nav id="nav"></nav>
+<script>
+const CATS=["Rent","Groceries","Dining","Transport","Subscriptions","Utilities","Shopping","Other"];
+const TIPS=[["Use a high-yield savings account","Online banks often pay several times more interest than a traditional savings account. Move your emergency fund there."],["Get your full 401(k) match","If your employer matches contributions, that is free money. Contribute at least enough to get the full match."],["Pay high-interest debt first","Credit card APRs are often above 20%. Paying them down is a guaranteed return."],["Try the 50/30/20 rule","50% needs, 30% wants, 20% savings and debt payoff."],["Audit subscriptions monthly","Cancel streaming, apps and memberships you barely use."],["Cut grocery costs","Plan meals, buy store brands, and use a list."],["Avoid bank fees","Choose accounts with no monthly or overdraft fees."],["Compare phone and internet plans","Prepaid or MVNO plans can cut your bill by half."],["Build a 3–6 month emergency fund","Aim for 3–6 months of essential expenses."]];
+let S={exp:[],bud:{},goals:[]},tab="home";
+try{const r=localStorage.getItem("savesmart");if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+const save=()=>{try{localStorage.setItem("savesmart",JSON.stringify(S))}catch(e){}};
+const $=s=>document.querySelector(s);
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const usd=n=>"$"+Number(n).toLocaleString("en-US",{minimumFractionDigits:0,maximumFractionDigits:2});
+const ym=d=>d.slice(0,7),now=()=>new Date().toISOString().slice(0,10);
+const monthExp=()=>S.exp.filter(e=>ym(e.date)===ym(now()));
+function byCat(){const m={};monthExp().forEach(e=>m[e.cat]=(m[e.cat]||0)+e.amt);return m}
+function home(){
+const m=byCat(),tot=Object.values(m).reduce((a,b)=>a+b,0);
+const top=Object.entries(m).filter(x=>x[0]!=="Rent").sort((a,b)=>b[1]-a[1])[0];
+const ins=top?`Your top flexible spending is <b>${top[0]}</b> at ${usd(top[1])} this month. Cutting it by 20% would save about <b>${usd(top[1]*0.2*12)}</b> a year.`:"Add your first expense to see personalized savings insights.";
+const list=S.exp.slice().sort((a,b)=>b.date.localeCompare(a.date)||b.id-a.id).slice(0,8).map(e=>`<div class="li row"><div>${esc(e.cat)}<div class="mu">${e.date}${e.note?" · "+esc(e.note):""}</div></div><div><b>${usd(e.amt)}</b> <button class="s" onclick="delE(${e.id})">✕</button></div></div>`).join("")||'<div class="mu">No expenses yet.</div>';
+return `<h1>SaveSmart</h1><div class="mu">Spent this month</div><div class="big">${usd(tot)}</div>
+<div class="ins">${ins}</div>
+<div class="card"><h2>Add expense</h2><div class="g2"><input id="amt" type="number" inputmode="decimal" placeholder="Amount ($)"><select id="cat">${CATS.map(c=>`<option>${c}</option>`).join("")}</select></div><input id="note" placeholder="Note (optional)"><button onclick="addE()">Add expense</button></div>
+<div class="card"><h2>Recent</h2>${list}</div>`}
+function budget(){
+const m=byCat();
+const rows=CATS.map(c=>{const b=S.bud[c]||0,s=m[c]||0,p=b?Math.min(100,s/b*100):0;const col=!b?"":s>=b?"var(--rd)":s>=b*.8?"var(--wn)":"";
+return `<div class="li"><div class="row"><b>${c}</b><span class="mu">${usd(s)} / <input style="width:90px;display:inline;padding:6px" type="number" inputmode="decimal" value="${b||""}" placeholder="limit" onchange="setB('${c}',this.value)"></span></div><div class="bar"><i style="width:${p}%;${col?"background:"+col:""}"></i></div>${b&&s>=b?'<div class="mu" style="color:var(--rd)">Over budget</div>':b&&s>=b*.8?'<div class="mu" style="color:var(--wn)">80% used</div>':""}</div>`}).join("");
+return `<h1>Budget</h1><div class="mu">Monthly limit per category. Tip: 50/30/20 rule.</div><div class="card">${rows}</div>`}
+function goals(){
+const l=S.goals.map(g=>{const p=Math.min(100,g.saved/g.target*100),left=Math.max(0,g.target-g.saved);
+return `<div class="li"><div class="row"><b>${esc(g.name)}</b><span>${usd(g.saved)} / ${usd(g.target)}</span></div><div class="bar"><i style="width:${p}%"></i></div><div class="row"><span class="mu">${left?"Save "+usd(left/12)+"/mo to finish in a year":"Goal reached 🎉"}</span><span><button class="s" onclick="addG(${g.id})">+ Add</button> <button class="s" onclick="delG(${g.id})">✕</button></span></div></div>`}).join("")||'<div class="mu">No goals yet.</div>';
+return `<h1>Savings goals</h1><div class="card">${l}</div><div class="card"><h2>New goal</h2><input id="gn" placeholder="e.g. Emergency fund"><input id="gt" type="number" inputmode="decimal" placeholder="Target ($)"><button onclick="newG()">Create goal</button></div>`}
+function tips(){return `<h1>Money-saving tips</h1>`+TIPS.map(t=>`<div class="card"><h2>${t[0]}</h2><div class="mu">${t[1]}</div></div>`).join("")+`<div class="disc">Educational information only, not financial advice.</div>`}
+function addE(){const a=parseFloat($("#amt").value);if(!(a>0))return;S.exp.push({id:Date.now(),amt:a,cat:$("#cat").value,note:$("#note").value.trim(),date:now()});save();draw()}
+function delE(id){S.exp=S.exp.filter(e=>e.id!==id);save();draw()}
+function setB(c,v){S.bud[c]=parseFloat(v)||0;save();draw()}
+function newG(){const n=$("#gn").value.trim(),t=parseFloat($("#gt").value);if(!n||!(t>0))return;S.goals.push({id:Date.now(),name:n,target:t,saved:0});save();draw()}
+function addG(id){const v=parseFloat(prompt("Amount to add ($)"));if(!(v>0))return;const g=S.goals.find(x=>x.id===id);g.saved+=v;save();draw()}
+function delG(id){S.goals=S.goals.filter(g=>g.id!==id);save();draw()}
+function draw(){
+$("#app").innerHTML={home,budget,goals,tips}[tab]();
+$("#nav").innerHTML=[["home","🏠","Home"],["budget","📊","Budget"],["goals","🎯","Goals"],["tips","💡","Tips"]].map(t=>`<button class="${tab===t[0]?"on":""}" style="flex:1" onclick="tab='${t[0]}';draw();scrollTo(0,0)">${t[1]}<br>${t[2]}</button>`).join("")}
+draw();
+if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
+</script></body></html>
